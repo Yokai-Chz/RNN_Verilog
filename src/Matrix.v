@@ -268,7 +268,7 @@ module hiddenComplete #(
     // --- 1. Multiplicación 1x1 por 1x20 (W_i2r_w0) ---
     wire signed [BW_OUT-1:0] partial_products_input_ARRAY [HIDDEN_SIZE-1:0];
 
-    W_i2r_w0 i2h_input (
+    W_i2h_r0 i2h_input (
         .X(input_vector_bus),
         .Y1(partial_products_input_ARRAY[0]), .Y2(partial_products_input_ARRAY[1]), .Y3(partial_products_input_ARRAY[2]), .Y4(partial_products_input_ARRAY[3]),
         .Y5(partial_products_input_ARRAY[4]), .Y6(partial_products_input_ARRAY[5]), .Y7(partial_products_input_ARRAY[6]), .Y8(partial_products_input_ARRAY[7]),
