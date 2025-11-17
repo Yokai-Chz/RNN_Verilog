@@ -299,7 +299,33 @@ module hiddenComplete #(
 
 
     // --- 4. Suma final (Corregida) ---
-    assign output_vector_bus = partial_products_input_BUS + partial_products_hidden_BUS;
+    genvar i_add;
+    generate
+        for (i_add = 0; i_add < HIDDEN_SIZE; i_add = i_add + 1) begin : neuronal_addition
+            localparam integer base_idx = (HIDDEN_SIZE - 1 - i_add) * BW_OUT;
+            // --- DEFINICIÓN DE LÍMITES ---
+            // En binario: 01111...111 (aprox 32767.9999)
+            localparam signed [BW_OUT-1:0] MAX_VAL = 32'h7FFFFFFF; 
+            // En binario: 10000...000 (aprox -32768.0000)
+            localparam signed [BW_OUT-1:0] MIN_VAL = 32'h80000000;
+
+            wire signed [BW_OUT-1:0] hidden;
+            wire signed [BW_OUT-1:0] inputPart;
+            wire signed [BW_OUT-1:0] sumResult;
+            wire signed [BW_OUT-1:0] sumFinal;
+
+            assign hidden    = partial_products_hidden_BUS[base_idx +: BW_OUT];
+            assign inputPart = partial_products_input_BUS[i_add];
+
+            assign sumResult = {hidden[BW_OUT-1], hidden} + {inputPart[BW_OUT-1], inputPart}; // Extensión de signo
+
+            assign sumFinal = (sumResult > MAX_VAL) ? MAX_VAL :
+                              (sumResult < MIN_VAL) ? MIN_VAL :
+                              sumResult[BW_OUT-1:0];
+
+            assign output_vector_bus[base_idx +: BW_OUT] = sumFinal;
+        end
+    endgenerate
 
 endmodule
 
