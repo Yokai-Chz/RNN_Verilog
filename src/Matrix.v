@@ -233,8 +233,17 @@ module hidden2hidden_1x20_20x20 #(
                     sum_accumulator = sum_accumulator + partial_products[i_row][j_sum];
                 end
 
-                // Asigna el resultado ancho al registro de salida de 32 bits.
-                column_sums[j_sum] = sum_accumulator;
+                // --- CORRECCIÓN: Asignación con saturación para evitar desbordamiento ---
+                localparam signed [36:0] MAX_ACC_VAL = {5'b0, 32'h7FFFFFFF};
+                localparam signed [36:0] MIN_ACC_VAL = {5'b1, 32'h80000000};
+
+                if (sum_accumulator > MAX_ACC_VAL) begin
+                    column_sums[j_sum] = 32'h7FFFFFFF;
+                end else if (sum_accumulator < MIN_ACC_VAL) begin
+                    column_sums[j_sum] = 32'h80000000;
+                end else begin
+                    column_sums[j_sum] = sum_accumulator[31:0];
+                end
                 
             end // fin del bloque: sum_combinational_block
         end
@@ -395,7 +404,17 @@ module hidden_output #(
             sum_accumulator = sum_accumulator + partial_products[k];
         end
         
-        output_scalar_reg = sum_accumulator;
+        // --- CORRECCIÓN: Asignación con saturación ---
+        localparam signed [ACC_WIDTH-1:0] MAX_ACC_VAL = {5'b0, 32'h7FFFFFFF};
+        localparam signed [ACC_WIDTH-1:0] MIN_ACC_VAL = {5'b1, 32'h80000000};
+        
+        if (sum_accumulator > MAX_ACC_VAL) begin
+            output_scalar_reg = 32'h7FFFFFFF;
+        end else if (sum_accumulator < MIN_ACC_VAL) begin
+            output_scalar_reg = 32'h80000000;
+        end else begin
+            output_scalar_reg = sum_accumulator[31:0];
+        end
     end
 
     assign output_scalar = output_scalar_reg;
