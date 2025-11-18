@@ -294,19 +294,6 @@ module hiddenComplete #(
         .output_vector_bus(partial_products_hidden_BUS) 
     );
 
-
-    wire signed [HIDDEN_SIZE*BW_OUT-1:0] partial_products_input_BUS; // [639:0]
-
-    genvar j_pack;
-    generate
-        for (j_pack = 0; j_pack < HIDDEN_SIZE; j_pack = j_pack + 1) begin : pack_input_result_bus
-            // Orden MSB
-            localparam integer base_idx = (HIDDEN_SIZE - 1 - j_pack) * BW_OUT;
-            assign partial_products_input_BUS[base_idx +: BW_OUT] = partial_products_input_ARRAY[j_pack];
-        end
-    endgenerate
-
-
     // --- 4. Suma final (Corregida) ---
     genvar i_add;
     generate
