@@ -89,7 +89,7 @@ module tb_RNN;
             $display("==================================================");
     
             // --- 0. Abrir archivos ---
-            input_file = $fopen("c:/Users/Yokai/Documents/TT/RNN/data/synthetic_data_normalized.txt", "r");
+            input_file = $fopen("c:/Users/Yokai/Documents/TT/RNN/data/synthetic_data_normalized_test.txt", "r");
             output_file = $fopen("c:/Users/Yokai/Documents/TT/RNN/rnn_output.txt", "w");
     
             if (input_file == 0) begin
