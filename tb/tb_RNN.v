@@ -42,12 +42,15 @@ module tb_RNN;
     // ============================================================ 
     reg                            clk;
     reg                            rst_n;
-    reg  signed [BW_IN-1:0]        tb_input_vector_bus;
-    wire signed [BW_IN-1:0]        tb_output_scalar;
+    reg  signed [BW_IN-1:0]        tb_input_vector_bus; // Sigue siendo 32 bits
+
+    // --- CAMBIO: La salida del DUT ahora es de 37 bits ---
+    localparam integer BW_SUM = 37;
+    wire signed [BW_SUM-1:0]       tb_output_scalar;
 
     // --- Variables para el procesamiento de archivos ---
-    reg signed [BW_IN-1:0]         fixed_point_input;
-    reg signed [BW_IN-1:0]         prev_fixed_point_input;
+    reg signed [BW_IN-1:0]         fixed_point_input;      // 32 bits
+    reg signed [BW_IN-1:0]         prev_fixed_point_input; // 32 bits
     integer                        input_file;
     integer                        output_file;
     integer                        read_status;
@@ -62,7 +65,8 @@ module tb_RNN;
         .HIDDEN_SIZE(20),
         .OUTPUT_SIZE(1),
         .BW_IN(BW_IN),
-        .BW_OUT(BW_IN)
+        .BW_OUT(BW_IN),
+        .BW_SUM(37)
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
@@ -127,6 +131,8 @@ module tb_RNN;
                 @(posedge clk);
                 
                 // Escribir la entrada anterior y el resultado correspondiente
+                // La salida (tb_output_scalar) es Q22.15, la entrada (prev_fixed_point_input) es Q17.15.
+                // Ambos se dividen por 2^15 para obtener el valor real.
                 $fdisplay(output_file, "%f,%f", $signed(prev_fixed_point_input) / SCALE_FACTOR_REAL, $signed(tb_output_scalar) / SCALE_FACTOR_REAL);
     
                 // Leer el siguiente valor de entrada del archivo

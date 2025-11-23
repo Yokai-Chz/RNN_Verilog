@@ -5,19 +5,21 @@ module RNN #(
     parameter integer HIDDEN_SIZE        = 20,
     parameter integer OUTPUT_SIZE        = 1,
     parameter integer BW_IN              = 32,
-    parameter integer BW_OUT             = 32
+    parameter integer BW_OUT             = 32,
+    // --- CORRECCIÓN: Definir BW_SUM como parámetro para usarlo en el puerto de salida ---
+    parameter integer BW_SUM             = 37
 )(
     input  wire clk,
     input  wire rst_n,
     input  wire signed [INPUT_SIZE*BW_IN-1:0]   input_vector_bus,
-    output wire signed [OUTPUT_SIZE*BW_OUT-1:0] output_scalar
+    output wire signed [OUTPUT_SIZE*BW_SUM-1:0] output_scalar
 );
 
     // Registro para el estado oculto recurrente (X_hidden)
     reg signed [INPUT_HIDDEN_SIZE*BW_IN-1:0] hidden_state_reg;
 
     // Wires para las conexiones intermedias
-    wire signed [HIDDEN_SIZE*BW_OUT-1:0] hidden_complete_out_bus;
+    wire signed [HIDDEN_SIZE*BW_SUM-1:0] hidden_complete_out_bus; // <-- CAMBIO: Ahora es de 37 bits por elemento
     wire signed [HIDDEN_SIZE*BW_OUT-1:0] activated_hidden_bus;
 
     // 1. Instancia del módulo hiddenComplete
@@ -27,7 +29,8 @@ module RNN #(
         .INPUT_HIDDEN_SIZE(INPUT_HIDDEN_SIZE),
         .HIDDEN_SIZE(HIDDEN_SIZE),
         .BW_IN(BW_IN),
-        .BW_OUT(BW_OUT)
+        .BW_OUT(BW_OUT),
+        .BW_SUM_OUT(BW_SUM) // <-- CAMBIO: Se pasa el nuevo ancho de bits
     ) inst_hidden_complete (
         .hidden_vector_bus(hidden_state_reg),
         .input_vector_bus(input_vector_bus),
@@ -38,8 +41,8 @@ module RNN #(
     // Aplica la función Tanh al resultado
     Activate #(
         .INPUT_SIZE(HIDDEN_SIZE),
-        .BW_IN(BW_IN),
-        .BW_OUT(BW_OUT)
+        .BW_IN(BW_SUM),   // <-- CAMBIO: La entrada ahora es de 37 bits
+        .BW_OUT(BW_OUT)  // La salida se mantiene en 32 bits
     ) inst_activate (
         .vectorA_bus(hidden_complete_out_bus),
         .result_bus(activated_hidden_bus)
@@ -58,7 +61,7 @@ module RNN #(
     // Calcula la salida final: activated_hidden * W_h2o
     hidden_output #(
         .INPUT_SIZE(HIDDEN_SIZE),
-        .BW_IN(BW_IN),
+        .BW_IN(BW_OUT), // <-- CORRECCIÓN: La entrada a este módulo es de 32 bits (BW_OUT de Activate)
         .BW_OUT(BW_OUT)
     ) inst_hidden_output (
         .input_vector_bus(activated_hidden_bus),

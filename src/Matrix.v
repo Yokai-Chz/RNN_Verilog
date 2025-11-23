@@ -2,11 +2,13 @@ module hidden2hidden_1x20_20x20 #(
     parameter integer INPUT_SIZE  = 20,  // N: Tamaño del vector de entrada
     parameter integer HIDDEN_SIZE = 20,  // M: Tamaño de la capa oculta
     parameter integer BW_IN       = 32,
-    parameter integer BW_OUT      = 32
+    parameter integer BW_OUT      = 32,
+    // --- CORRECCIÓN: Parámetro para el ancho de bits de la suma ---
+    parameter integer BW_SUM_OUT  = 37
 ) (
     input  wire signed [INPUT_SIZE*BW_IN-1:0]   input_vector_bus, 
-    // --- CAMBIO: Salida es 'wire' para permitir asignaciones paralelas ---
-    output wire signed [HIDDEN_SIZE*BW_OUT-1:0] output_vector_bus
+    // Usar el nuevo ancho de bits para la salida
+    output wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] output_vector_bus
 );
 
     // --- 1. Desempaquetar el bus de entrada (Orden MSB) ---
@@ -207,7 +209,7 @@ module hidden2hidden_1x20_20x20 #(
 
     // --- 3. Suma de columnas paralela (con generate) ---
     // Array para los 20 resultados de suma (sigue siendo la salida)
-    reg signed [BW_OUT-1:0] column_sums [HIDDEN_SIZE-1:0];
+    reg signed [BW_SUM_OUT-1:0] column_sums [HIDDEN_SIZE-1:0];
 
     genvar j_sum;
     // 'i_row' ya no se declara aquí
@@ -220,7 +222,7 @@ module hidden2hidden_1x20_20x20 #(
             always @(*) begin : sum_combinational_block // <-- Nombramos el bloque
 
                 // --- SOLUCIÓN: Declarar variables DENTRO de un bloque nombrado ---
-                reg signed [BW_OUT + 5 - 1:0] sum_accumulator; // 37 bits
+                reg signed [BW_SUM_OUT - 1:0] sum_accumulator; // 37 bits
                 integer i_row;                               // 'i_row' se declara aquí
                 
                 // Inicializa el acumulador ancho
@@ -233,7 +235,7 @@ module hidden2hidden_1x20_20x20 #(
                     sum_accumulator = sum_accumulator + partial_products[i_row][j_sum];
                 end
 
-                // Asigna el resultado ancho al registro de salida de 32 bits.
+                // Asigna el resultado ancho al registro de salida de 37 bits.
                 column_sums[j_sum] = sum_accumulator;
                 
             end // fin del bloque: sum_combinational_block
@@ -246,8 +248,8 @@ module hidden2hidden_1x20_20x20 #(
     generate
         for (j_pack = 0; j_pack < HIDDEN_SIZE; j_pack = j_pack + 1) begin : pack_output_bus
             // --- CAMBIO MSB: Invertimos el índice de escritura ---
-            localparam integer base_idx = (HIDDEN_SIZE - 1 - j_pack) * BW_OUT;
-            assign output_vector_bus[base_idx +: BW_OUT] = column_sums[j_pack];
+            localparam integer base_idx = (HIDDEN_SIZE - 1 - j_pack) * BW_SUM_OUT;
+            assign output_vector_bus[base_idx +: BW_SUM_OUT] = column_sums[j_pack];
         end
     endgenerate
 
@@ -258,11 +260,13 @@ module hiddenComplete #(
     parameter integer INPUT_HIDDEN_SIZE  = 20,  // X: Tamaño del vector de entrada
     parameter integer HIDDEN_SIZE        = 20,  // M: Tamaño de la capa oculta
     parameter integer BW_IN              = 32,
-    parameter integer BW_OUT             = 32
+    parameter integer BW_OUT             = 32,
+    // --- CAMBIO: Ancho de bits de salida extendido para la suma ---
+    parameter integer BW_SUM_OUT         = 37
 )(
     input  wire signed [INPUT_HIDDEN_SIZE*BW_IN-1:0]   hidden_vector_bus, 
     input  wire signed [INPUT_SIZE*BW_IN-1:0]          input_vector_bus,
-    output wire signed [HIDDEN_SIZE*BW_OUT-1:0] output_vector_bus
+    output wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] output_vector_bus
 );
     
     // --- 1. Multiplicación 1x1 por 1x20 (W_i2r_w0) ---
@@ -278,27 +282,30 @@ module hiddenComplete #(
     );
 
     // --- 2. Multiplicación 1x20 por 20x20 (hidden2hidden) ---
-    wire signed [HIDDEN_SIZE*BW_OUT-1:0] partial_products_hidden_BUS; // [639:0]
+    wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] partial_products_hidden_BUS;
 
-    hidden2hidden_1x20_20x20 h2h_mult(
+    hidden2hidden_1x20_20x20 #(
+        .BW_SUM_OUT(BW_SUM_OUT)
+    )h2h_mult(
         .input_vector_bus(hidden_vector_bus),
         .output_vector_bus(partial_products_hidden_BUS) 
     );
 
-
-    wire signed [HIDDEN_SIZE*BW_OUT-1:0] partial_products_input_BUS; // [639:0]
+    // --- 3. Empaquetar el resultado de la multiplicación de entrada en un bus ---
+    wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] partial_products_input_BUS;
 
     genvar j_pack;
     generate
         for (j_pack = 0; j_pack < HIDDEN_SIZE; j_pack = j_pack + 1) begin : pack_input_result_bus
             // Orden MSB
-            localparam integer base_idx = (HIDDEN_SIZE - 1 - j_pack) * BW_OUT;
-            assign partial_products_input_BUS[base_idx +: BW_OUT] = partial_products_input_ARRAY[j_pack];
+            localparam integer base_idx = (HIDDEN_SIZE - 1 - j_pack) * BW_SUM_OUT;
+            // Extensión de signo para la suma
+            assign partial_products_input_BUS[base_idx +: BW_SUM_OUT] = {{5{partial_products_input_ARRAY[j_pack][BW_IN-1]}}, partial_products_input_ARRAY[j_pack]};
         end
     endgenerate
 
 
-    // --- 4. Suma final (Corregida) ---
+    // --- 4. Suma final ---
     assign output_vector_bus = partial_products_input_BUS + partial_products_hidden_BUS;
 
 endmodule
@@ -306,15 +313,16 @@ endmodule
 module hidden_output #(
     parameter integer INPUT_SIZE = 20,  // Longitud del vector
     parameter integer BW_IN      = 32,  // Ancho de bits de cada elemento de entrada
-    parameter integer BW_OUT     = 32   // Ancho de bits de la salida
+    parameter integer BW_OUT     = 32   // Ancho de bits de la salida (base para ACC_WIDTH)
 )(
     // Vector de entrada 1x20
     input  wire signed [INPUT_SIZE*BW_IN-1:0]   input_vector_bus,
     
+    
     // Resultado escalar 1x1 
-    output wire signed [BW_OUT-1:0]             output_scalar
+    output wire signed [BW_OUT+5-1:0]          output_scalar
 );
-
+    localparam integer ACC_WIDTH = BW_OUT + 5;
     // --- 1. Desempaquetar Bus de Entrada ---
     wire signed [BW_IN-1:0] input_elements [0:INPUT_SIZE-1];
     
@@ -355,23 +363,21 @@ module hidden_output #(
 
     // --- 3. Suma de Reducción ---
     
-    reg signed [BW_OUT-1:0] output_scalar_reg;
-    
-    localparam integer ACC_WIDTH = BW_OUT + 5;
-    
+    // Acumulador de 37 bits.
+    reg signed [ACC_WIDTH-1:0] sum_accumulator;
     integer k;
-    reg signed [ACC_WIDTH-1:0] sum_accumulator; 
 
     always @(*) begin
+        // Inicializar el acumulador a cero.
         sum_accumulator = {ACC_WIDTH{1'b0}}; 
         
         for (k = 0; k < INPUT_SIZE; k = k + 1) begin
+            // Sumar los productos parciales. La extensión de signo de 32 a 37 bits es automática.
             sum_accumulator = sum_accumulator + partial_products[k];
         end
-        
-        output_scalar_reg = sum_accumulator;
     end
 
-    assign output_scalar = output_scalar_reg;
+    // Asignar directamente el resultado del acumulador de 37 bits a la salida.
+    assign output_scalar = sum_accumulator;
 
 endmodule
