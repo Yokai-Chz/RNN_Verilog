@@ -1,7 +1,7 @@
 module Activate #(
     parameter INPUT_SIZE      = 20,   // Número de elementos en el vector
-    parameter BW_IN           = 32,   // Ancho de bits de entrada (32 bits para Tanh)
-    parameter BW_OUT          = 32    // Ancho de bits de salida (32 bits para Tanh)
+    parameter BW_IN           = 37,   // Ancho de bits de entrada (ahora 37)
+    parameter BW_OUT          = 32    // Ancho de bits de salida (se mantiene en 32)
 )(
     input  wire signed [INPUT_SIZE*BW_IN-1:0]   vectorA_bus,
     output wire signed [INPUT_SIZE*BW_OUT-1:0]  result_bus
@@ -10,10 +10,10 @@ module Activate #(
     // 1. Crear arrays de wires para conectar las N instancias
     
     // Wire para cada entrada de 32 bits desempaquetada
-    wire signed [BW_IN-1:0]  tanh_inputs [0:INPUT_SIZE-1];
+    wire signed [BW_IN-1:0]  tanh_inputs [0:INPUT_SIZE-1]; // Será de 37 bits
     
     // Wire para cada salida de 32 bits de Tanh
-    wire signed [BW_OUT-1:0] tanh_outputs [0:INPUT_SIZE-1];
+    wire signed [BW_OUT-1:0] tanh_outputs [0:INPUT_SIZE-1]; // Será de 32 bits
 
 
     // 2. Generar N instancias del módulo Tanh
@@ -29,8 +29,8 @@ module Activate #(
             
             // 2b. Instanciar el módulo Tanh
             Tanh u_tanh (
-                .x(tanh_inputs[i]),      // Entrada de 32-bit
-                .y(tanh_outputs[i])    // Salida de 32-bit
+                .x(tanh_inputs[i]),      // Entrada de 37 bits
+                .y(tanh_outputs[i])      // Salida de 32 bits
             );
             
             // 2c. Empaquetar el array de outputs en el bus de salida (Orden MSB)
