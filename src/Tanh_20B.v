@@ -7,20 +7,20 @@ module Tanh(
     
     // --- Límites de entrada  ---
     // (Valor decimal * 2^15)
-    localparam signed [39:0] LIM_2_375 = 32'sd77824;  // 2.375
-    localparam signed [39:0] LIM_1_5   = 32'sd49152;  // 1.5
-    localparam signed [39:0] LIM_1_0   = 32'sd32768;  // 1.0
-    localparam signed [39:0] LIM_0_5   = 32'sd16384;  // 0.5
+    localparam signed [39:0] LIM_2_375 = 32'sd2490368;  // 2.375
+    localparam signed [39:0] LIM_1_5   = 32'sd1572864;  // 1.5
+    localparam signed [39:0] LIM_1_0   = 32'sd1048576;  // 1.0
+    localparam signed [39:0] LIM_0_5   = 32'sd524288;  // 0.5
 
     // --- Constantes de offset ---
     // (Valor decimal * 2^15)
-    localparam signed [39:0] OFFSET_RAMP1 = 32'sd25088;  // 0.765625
-    localparam signed [39:0] OFFSET_RAMP2 = 32'sd15872;  // 0.484375
-    localparam signed [39:0] OFFSET_RAMP3 = 32'sd5632;   // 0.171875
+    localparam signed [39:0] OFFSET_RAMP1 = 32'sd802816;  // 0.765625
+    localparam signed [39:0] OFFSET_RAMP2 = 32'sd507904;  // 0.484375
+    localparam signed [39:0] OFFSET_RAMP3 = 32'sd180224;   // 0.171875
 
     // --- Constantes de saturación ---
-    localparam signed [39:0] Y_ONE_POS =  32'sd32768;  // 1.0
-    localparam signed [39:0] Y_ONE_NEG = -32'sd32768;  // -1.0
+    localparam signed [39:0] Y_ONE_POS =  32'sd1048576;  // 1.0
+    localparam signed [39:0] Y_ONE_NEG = -32'sd1048576;  // -1.0
 
     // --- Valor absoluto ---
     wire signed [39:0] x_abs = (x < 0) ? -x : x;
