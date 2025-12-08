@@ -1,6 +1,5 @@
 
 module RNN #(
-<<<<<<< HEAD
     parameter integer HIDDEN_SIZE  = 20,
     parameter integer BW_IN        = 32,
     parameter integer BW_OUT       = 40
@@ -9,34 +8,14 @@ module RNN #(
     input  wire rst_n,
     input  wire signed [BW_IN-1:0]   x_input,
     output wire signed [BW_OUT-1:0]   y_output
-=======
-    parameter integer INPUT_SIZE         = 1,
-    parameter integer INPUT_HIDDEN_SIZE  = 20,
-    parameter integer HIDDEN_SIZE        = 20,
-    parameter integer OUTPUT_SIZE        = 1,
-    parameter integer BW_IN              = 32,
-    parameter integer BW_OUT             = 32,
-    // --- CORRECCIÓN: Definir BW_SUM como parámetro para usarlo en el puerto de salida ---
-    parameter integer BW_SUM             = 37
-)(
-    input  wire clk,
-    input  wire rst_n,
-    input  wire signed [INPUT_SIZE*BW_IN-1:0]   input_vector_bus,
-    output wire signed [OUTPUT_SIZE*BW_SUM-1:0] output_scalar
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2
 );
 
     // Registro para el estado oculto recurrente (X_hidden)
     reg signed [BW_IN-1:0] hidden_state_reg [0:HIDDEN_SIZE-1];
 
     // Wires para las conexiones intermedias
-<<<<<<< HEAD
     wire signed [BW_OUT-1:0] hidden_complete_out_bus [0:HIDDEN_SIZE-1];
     wire signed [BW_IN-1:0] activated_hidden_bus [0:HIDDEN_SIZE-1];
-=======
-    wire signed [HIDDEN_SIZE*BW_SUM-1:0] hidden_complete_out_bus; // <-- CAMBIO: Ahora es de 37 bits por elemento
-    wire signed [HIDDEN_SIZE*BW_OUT-1:0] activated_hidden_bus;
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2
 
     // 1. Instancia del módulo hiddenComplete
     // Calcula: (X * W_i2h) + (X_hidden * W_h2h)
@@ -61,15 +40,9 @@ module RNN #(
 
     // 2. Instancia del módulo Activate
     Activate #(
-<<<<<<< HEAD
         .HIDDEN_SIZE(HIDDEN_SIZE),
         .BW_IN(BW_OUT),
         .BW_OUT(BW_IN)
-=======
-        .INPUT_SIZE(HIDDEN_SIZE),
-        .BW_IN(BW_SUM),   // <-- CAMBIO: La entrada ahora es de 37 bits
-        .BW_OUT(BW_OUT)  // La salida se mantiene en 32 bits
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2
     ) inst_activate (
         .hc_1(hidden_complete_out_bus[0]), .hc_2(hidden_complete_out_bus[1]), .hc_3(hidden_complete_out_bus[2]), .hc_4(hidden_complete_out_bus[3]),
         .hc_5(hidden_complete_out_bus[4]), .hc_6(hidden_complete_out_bus[5]), .hc_7(hidden_complete_out_bus[6]), .hc_8(hidden_complete_out_bus[7]),
@@ -135,13 +108,8 @@ module RNN #(
 
     // 4. Instancia del módulo hidden_output
     hidden_output #(
-<<<<<<< HEAD
         .HIDDEN_SIZE(HIDDEN_SIZE),
         .BW_IN(BW_IN),
-=======
-        .INPUT_SIZE(HIDDEN_SIZE),
-        .BW_IN(BW_OUT), // <-- CORRECCIÓN: La entrada a este módulo es de 32 bits (BW_OUT de Activate)
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2
         .BW_OUT(BW_OUT)
     ) inst_hidden_output (
         .ha_1(activated_hidden_bus[0]), .ha_2(activated_hidden_bus[1]), .ha_3(activated_hidden_bus[2]), .ha_4(activated_hidden_bus[3]),

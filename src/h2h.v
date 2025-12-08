@@ -1,23 +1,10 @@
 module hidden2hidden_1x20_20x20 #(
-<<<<<<< HEAD:src/h2h.v
     parameter integer HIDDEN_SIZE    = 20, // M: Tamaño de la capa oculta
     parameter integer BW_IN          = 32, // Tamaño de entrada de bits 
     parameter integer BW_OUT         = 40  // Tamaño de entrada de bits 
 ) (
     input  wire signed [BW_IN-1:0] h_1, h_2, h_3, h_4, h_5, h_6, h_7, h_8, h_9, h_10, h_11, h_12, h_13, h_14, h_15, h_16, h_17, h_18, h_19, h_20,
     output wire signed [BW_OUT-1:0] h2h_1, h2h_2, h2h_3, h2h_4, h2h_5, h2h_6, h2h_7, h2h_8, h2h_9, h2h_10, h2h_11, h2h_12, h2h_13, h2h_14, h2h_15, h2h_16, h2h_17, h2h_18, h2h_19, h2h_20
-=======
-    parameter integer INPUT_SIZE  = 20,  // N: Tamaño del vector de entrada
-    parameter integer HIDDEN_SIZE = 20,  // M: Tamaño de la capa oculta
-    parameter integer BW_IN       = 32,
-    parameter integer BW_OUT      = 32,
-    // --- CORRECCIÓN: Parámetro para el ancho de bits de la suma ---
-    parameter integer BW_SUM_OUT  = 37
-) (
-    input  wire signed [INPUT_SIZE*BW_IN-1:0]   input_vector_bus, 
-    // Usar el nuevo ancho de bits para la salida
-    output wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] output_vector_bus
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2:src/Matrix.v
 );
 
     // --- 2. Calcular productos parciales (h_i * W_row_i) ---
@@ -205,12 +192,7 @@ module hidden2hidden_1x20_20x20 #(
 
 
     // --- 3. Suma de columnas paralela (con generate) ---
-<<<<<<< HEAD:src/h2h.v
     reg signed [BW_OUT-1:0] column_sums [0:HIDDEN_SIZE-1];
-=======
-    // Array para los 20 resultados de suma (sigue siendo la salida)
-    reg signed [BW_SUM_OUT-1:0] column_sums [HIDDEN_SIZE-1:0];
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2:src/Matrix.v
 
     genvar j_sum;
     
@@ -221,14 +203,8 @@ module hidden2hidden_1x20_20x20 #(
             // Instancia 20 bloques 'always' independientes, uno por columna
             always @(*) begin : sum_combinational_block 
 
-<<<<<<< HEAD:src/h2h.v
                 reg signed [BW_OUT-1:0] sum_accumulator;
                 integer i_row;                               
-=======
-                // --- SOLUCIÓN: Declarar variables DENTRO de un bloque nombrado ---
-                reg signed [BW_SUM_OUT - 1:0] sum_accumulator; // 37 bits
-                integer i_row;                               // 'i_row' se declara aquí
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2:src/Matrix.v
                 
                 // Inicializa el acumulador
                 sum_accumulator = 0; 
@@ -240,8 +216,7 @@ module hidden2hidden_1x20_20x20 #(
                     sum_accumulator = sum_accumulator + partial_products[i_row][j_sum];
                 end
 
-<<<<<<< HEAD:src/h2h.v
-<<<<<<< HEAD:src/Matrix.v
+
                 // --- CORRECCIÓN: Asignación con saturación para evitar desbordamiento ---
                 localparam signed [36:0] MAX_ACC_VAL = {5'b0, 32'h7FFFFFFF};
                 localparam signed [36:0] MIN_ACC_VAL = {5'b1, 32'h80000000};
@@ -253,20 +228,17 @@ module hidden2hidden_1x20_20x20 #(
                 end else begin
                     column_sums[j_sum] = sum_accumulator[31:0];
                 end
-=======
-                column_sums[j_sum] = sum_accumulator;
->>>>>>> Reestructura:src/h2h.v
-=======
+                    column_sums[j_sum] = sum_accumulator;
+
                 // Asigna el resultado ancho al registro de salida de 37 bits.
                 column_sums[j_sum] = sum_accumulator;
->>>>>>> a5df63bafda4dc2ea11622bdce397efb5569b0d2:src/Matrix.v
+
                 
             end 
         end
     endgenerate
 
 
-<<<<<<< HEAD:src/Matrix.v
     // --- 4. Empaquetar el bus de salida (Orden MSB) ---
     genvar j_pack;
     generate
@@ -279,151 +251,3 @@ module hidden2hidden_1x20_20x20 #(
 
 endmodule
 
-module hiddenComplete #(
-    parameter integer INPUT_SIZE         = 1 ,   // X: Tamaño del vector de entrada
-    parameter integer INPUT_HIDDEN_SIZE  = 20,  // X: Tamaño del vector de entrada
-    parameter integer HIDDEN_SIZE        = 20,  // M: Tamaño de la capa oculta
-    parameter integer BW_IN              = 32,
-    parameter integer BW_OUT             = 32,
-    // --- CAMBIO: Ancho de bits de salida extendido para la suma ---
-    parameter integer BW_SUM_OUT         = 37
-)(
-    input  wire signed [INPUT_HIDDEN_SIZE*BW_IN-1:0]   hidden_vector_bus, 
-    input  wire signed [INPUT_SIZE*BW_IN-1:0]          input_vector_bus,
-    output wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] output_vector_bus
-);
-    
-    // --- 1. Multiplicación 1x1 por 1x20 (W_i2r_w0) ---
-    wire signed [BW_OUT-1:0] partial_products_input_ARRAY [HIDDEN_SIZE-1:0];
-
-    W_i2h_r0 i2h_input (
-        .X(input_vector_bus),
-        .Y1(partial_products_input_ARRAY[0]), .Y2(partial_products_input_ARRAY[1]), .Y3(partial_products_input_ARRAY[2]), .Y4(partial_products_input_ARRAY[3]),
-        .Y5(partial_products_input_ARRAY[4]), .Y6(partial_products_input_ARRAY[5]), .Y7(partial_products_input_ARRAY[6]), .Y8(partial_products_input_ARRAY[7]),
-        .Y9(partial_products_input_ARRAY[8]), .Y10(partial_products_input_ARRAY[9]), .Y11(partial_products_input_ARRAY[10]), .Y12(partial_products_input_ARRAY[11]),
-        .Y13(partial_products_input_ARRAY[12]), .Y14(partial_products_input_ARRAY[13]), .Y15(partial_products_input_ARRAY[14]), .Y16(partial_products_input_ARRAY[15]),
-        .Y17(partial_products_input_ARRAY[16]), .Y18(partial_products_input_ARRAY[17]), .Y19(partial_products_input_ARRAY[18]), .Y20(partial_products_input_ARRAY[19])
-    );
-
-    // --- 2. Multiplicación 1x20 por 20x20 (hidden2hidden) ---
-    wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] partial_products_hidden_BUS;
-
-    hidden2hidden_1x20_20x20 #(
-        .BW_SUM_OUT(BW_SUM_OUT)
-    )h2h_mult(
-        .input_vector_bus(hidden_vector_bus),
-        .output_vector_bus(partial_products_hidden_BUS) 
-    );
-
-    // --- 3. Empaquetar el resultado de la multiplicación de entrada en un bus ---
-    wire signed [HIDDEN_SIZE*BW_SUM_OUT-1:0] partial_products_input_BUS;
-
-    genvar j_pack;
-    generate
-        for (j_pack = 0; j_pack < HIDDEN_SIZE; j_pack = j_pack + 1) begin : pack_input_result_bus
-            // Orden MSB
-            localparam integer base_idx = (HIDDEN_SIZE - 1 - j_pack) * BW_SUM_OUT;
-            // Extensión de signo para la suma
-            assign partial_products_input_BUS[base_idx +: BW_SUM_OUT] = {{5{partial_products_input_ARRAY[j_pack][BW_IN-1]}}, partial_products_input_ARRAY[j_pack]};
-        end
-    endgenerate
-
-
-    // --- 4. Suma final ---
-    assign output_vector_bus = partial_products_input_BUS + partial_products_hidden_BUS;
-
-endmodule
-
-module hidden_output #(
-    parameter integer INPUT_SIZE = 20,  // Longitud del vector
-    parameter integer BW_IN      = 32,  // Ancho de bits de cada elemento de entrada
-    parameter integer BW_OUT     = 32   // Ancho de bits de la salida (base para ACC_WIDTH)
-)(
-    // Vector de entrada 1x20
-    input  wire signed [INPUT_SIZE*BW_IN-1:0]   input_vector_bus,
-    
-    
-    // Resultado escalar 1x1 
-    output wire signed [BW_OUT+5-1:0]          output_scalar
-);
-    localparam integer ACC_WIDTH = BW_OUT + 5;
-    // --- 1. Desempaquetar Bus de Entrada ---
-    wire signed [BW_IN-1:0] input_elements [0:INPUT_SIZE-1];
-    
-    genvar i_unpack;
-    generate
-        for (i_unpack = 0; i_unpack < INPUT_SIZE; i_unpack = i_unpack + 1) begin : unpack_input_bus
-            // orden MSB
-            localparam integer base_idx = (INPUT_SIZE - 1 - i_unpack) * BW_IN;
-            assign input_elements[i_unpack] = input_vector_bus[base_idx +: BW_IN];
-        end
-    endgenerate
-
-    
-    // --- 2. Multiplicaciones en Paralelo ---
-    wire signed [BW_OUT-1:0] partial_products [0:INPUT_SIZE-1];
-
-    W_h2o_r0  mul_0  (.X(input_elements[0]),  .Y(partial_products[0]));
-    W_h2o_r1  mul_1  (.X(input_elements[1]),  .Y(partial_products[1]));
-    W_h2o_r2  mul_2  (.X(input_elements[2]),  .Y(partial_products[2]));
-    W_h2o_r3  mul_3  (.X(input_elements[3]),  .Y(partial_products[3]));
-    W_h2o_r4  mul_4  (.X(input_elements[4]),  .Y(partial_products[4]));
-    W_h2o_r5  mul_5  (.X(input_elements[5]),  .Y(partial_products[5]));
-    W_h2o_r6  mul_6  (.X(input_elements[6]),  .Y(partial_products[6]));
-    W_h2o_r7  mul_7  (.X(input_elements[7]),  .Y(partial_products[7]));
-    W_h2o_r8  mul_8  (.X(input_elements[8]),  .Y(partial_products[8]));
-    W_h2o_r9  mul_9  (.X(input_elements[9]),  .Y(partial_products[9]));
-    W_h2o_r10 mul_10 (.X(input_elements[10]), .Y(partial_products[10]));
-    W_h2o_r11 mul_11 (.X(input_elements[11]), .Y(partial_products[11]));
-    W_h2o_r12 mul_12 (.X(input_elements[12]), .Y(partial_products[12]));
-    W_h2o_r13 mul_13 (.X(input_elements[13]), .Y(partial_products[13]));
-    W_h2o_r14 mul_14 (.X(input_elements[14]), .Y(partial_products[14]));
-    W_h2o_r15 mul_15 (.X(input_elements[15]), .Y(partial_products[15]));
-    W_h2o_r16 mul_16 (.X(input_elements[16]), .Y(partial_products[16]));
-    W_h2o_r17 mul_17 (.X(input_elements[17]), .Y(partial_products[17]));
-    W_h2o_r18 mul_18 (.X(input_elements[18]), .Y(partial_products[18]));
-    W_h2o_r19 mul_19 (.X(input_elements[19]), .Y(partial_products[19]));
-
-
-    // --- 3. Suma de Reducción ---
-    
-    // Acumulador de 37 bits.
-    reg signed [ACC_WIDTH-1:0] sum_accumulator;
-    integer k;
-
-    always @(*) begin
-        // Inicializar el acumulador a cero.
-        sum_accumulator = {ACC_WIDTH{1'b0}}; 
-        
-        for (k = 0; k < INPUT_SIZE; k = k + 1) begin
-            // Sumar los productos parciales. La extensión de signo de 32 a 37 bits es automática.
-            sum_accumulator = sum_accumulator + partial_products[k];
-        end
-    end
-
-    // Asignar directamente el resultado del acumulador de 37 bits a la salida.
-    assign output_scalar = sum_accumulator;
-
-=======
-    assign h2h_1 = column_sums[0];
-    assign h2h_2 = column_sums[1];
-    assign h2h_3 = column_sums[2];
-    assign h2h_4 = column_sums[3];
-    assign h2h_5 = column_sums[4];
-    assign h2h_6 = column_sums[5];
-    assign h2h_7 = column_sums[6];
-    assign h2h_8 = column_sums[7];
-    assign h2h_9 = column_sums[8];
-    assign h2h_10 = column_sums[9];
-    assign h2h_11 = column_sums[10];
-    assign h2h_12 = column_sums[11];
-    assign h2h_13 = column_sums[12];
-    assign h2h_14 = column_sums[13];
-    assign h2h_15 = column_sums[14];
-    assign h2h_16 = column_sums[15];
-    assign h2h_17 = column_sums[16];
-    assign h2h_18 = column_sums[17];
-    assign h2h_19 = column_sums[18];
-    assign h2h_20 = column_sums[19];
->>>>>>> Reestructura:src/h2h.v
-endmodule
