@@ -68,7 +68,7 @@ module Tanh(
                 
         // Aplicacion de simetria de Tanh 
         
-        assign y = (x < 0) ? -y_abs_result[31:0] : y_abs_result[31:0];
+        y = (x < 0) ? -y_abs_result[31:0] : y_abs_result[31:0];
     end
 
 endmodule

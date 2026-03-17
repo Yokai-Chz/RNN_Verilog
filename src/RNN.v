@@ -22,8 +22,7 @@ module RNN #(
     hiddenComplete #(
         .HIDDEN_SIZE(HIDDEN_SIZE),
         .BW_IN(BW_IN),
-        .BW_OUT(BW_OUT),
-        .BW_SUM_OUT(BW_SUM) // <-- CAMBIO: Se pasa el nuevo ancho de bits
+        .BW_OUT(BW_OUT)
     ) inst_hidden_complete (
         .x_input(x_input),
         .h_1(hidden_state_reg[0]), .h_2(hidden_state_reg[1]), .h_3(hidden_state_reg[2]), .h_4(hidden_state_reg[3]),

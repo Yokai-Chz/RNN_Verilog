@@ -193,6 +193,8 @@ module hidden2hidden_1x20_20x20 #(
 
     // --- 3. Suma de columnas paralela (con generate) ---
     reg signed [BW_OUT-1:0] column_sums [0:HIDDEN_SIZE-1];
+    localparam signed [36:0] MAX_ACC_VAL = {5'b0, 32'h7FFFFFFF};
+    localparam signed [36:0] MIN_ACC_VAL = {5'b1, 32'h80000000};
 
     genvar j_sum;
     
@@ -218,8 +220,7 @@ module hidden2hidden_1x20_20x20 #(
 
 
                 // --- CORRECCIÓN: Asignación con saturación para evitar desbordamiento ---
-                localparam signed [36:0] MAX_ACC_VAL = {5'b0, 32'h7FFFFFFF};
-                localparam signed [36:0] MIN_ACC_VAL = {5'b1, 32'h80000000};
+                
 
                 if (sum_accumulator > MAX_ACC_VAL) begin
                     column_sums[j_sum] = 32'h7FFFFFFF;
@@ -239,15 +240,28 @@ module hidden2hidden_1x20_20x20 #(
     endgenerate
 
 
-    // --- 4. Empaquetar el bus de salida (Orden MSB) ---
-    genvar j_pack;
-    generate
-        for (j_pack = 0; j_pack < HIDDEN_SIZE; j_pack = j_pack + 1) begin : pack_output_bus
-            // --- CAMBIO MSB: Invertimos el índice de escritura ---
-            localparam integer base_idx = (HIDDEN_SIZE - 1 - j_pack) * BW_SUM_OUT;
-            assign output_vector_bus[base_idx +: BW_SUM_OUT] = column_sums[j_pack];
-        end
-    endgenerate
+    // --- 4. Salida---
+    assign h2h_1  = column_sums[0];
+    assign h2h_2  = column_sums[1];
+    assign h2h_3  = column_sums[2];
+    assign h2h_4  = column_sums[3];
+    assign h2h_5  = column_sums[4];
+    assign h2h_6  = column_sums[5];
+    assign h2h_7  = column_sums[6];
+    assign h2h_8  = column_sums[7];
+    assign h2h_9  = column_sums[8];
+    assign h2h_10 = column_sums[9];
+    assign h2h_11 = column_sums[10];
+    assign h2h_12 = column_sums[11];
+    assign h2h_13 = column_sums[12];
+    assign h2h_14 = column_sums[13];
+    assign h2h_15 = column_sums[14];
+    assign h2h_16 = column_sums[15];
+    assign h2h_17 = column_sums[16];
+    assign h2h_18 = column_sums[17];
+    assign h2h_19 = column_sums[18];
+    assign h2h_20 = column_sums[19];
+
 
 endmodule
 
